@@ -1,0 +1,149 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Deploy a Go application binary to EC2",
+  "Parameters": {
+    "LatestAmiId": {
+      "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
+      "Default": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64"
+    }
+  },
+  "Resources": {
+    "InstanceSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable SSH and HTTP access to the application",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 22,
+            "ToPort": 22,
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 8000,
+            "ToPort": 8000,
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "EC2InstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [],
+        "Policies": [
+          {
+            "PolicyName": "S3AccessPolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": ["s3:PutObject", "s3:GetObject"],
+                  "Resource": "arn:aws:s3:::fabletop-games-bucket/*"
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "SecretsManagerAccessPolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "secretsmanager:GetSecretValue",
+                    "secretsmanager:ListSecrets"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "EC2InstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Roles": [{ "Ref": "EC2InstanceRole" }]
+      }
+    },
+    "ElasticIP": {
+      "Type": "AWS::EC2::EIP"
+    },
+    "EC2Instance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType": "t4g.nano",
+        "KeyName": "fabletop-games-key",
+        "ImageId": { "Ref": "LatestAmiId" },
+        "IamInstanceProfile": { "Ref": "EC2InstanceProfile" },
+        "SecurityGroupIds": [{ "Ref": "InstanceSecurityGroup" }],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "\n",
+              [
+                "#!/bin/bash",
+                "yum update -y",
+                "yum install -y aws-cli",
+                "cd /home/ec2-user",
+                "aws s3 cp s3://fabletop-games-bucket/fabletop-games-key ./fabletop-games",
+                "chmod +x fabletop-games",
+                "cat > /etc/systemd/system/fabletop-games.service << 'EOL'",
+                "[Unit]",
+                "Description=Fabletop Games Service",
+                "After=network.target",
+                "",
+                "[Service]",
+                "Type=simple",
+                "User=ec2-user",
+                "WorkingDirectory=/home/ec2-user",
+                "ExecStart=/home/ec2-user/fabletop-games",
+                "Restart=always",
+                "",
+                "[Install]",
+                "WantedBy=multi-user.target",
+                "EOL",
+                "systemctl enable fabletop-games",
+                "systemctl start fabletop-games"
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "EIPAssociation": {
+      "Type": "AWS::EC2::EIPAssociation",
+      "Properties": {
+        "InstanceId": { "Ref": "EC2Instance" },
+        "EIP": { "Ref": "ElasticIP" }
+      }
+    }
+  },
+  "Outputs": {
+    "InstanceId": {
+      "Description": "The ID of the EC2 instance",
+      "Value": { "Ref": "EC2Instance" }
+    },
+    "ElasticIP": {
+      "Description": "The Elastic IP of the instance",
+      "Value": { "Ref": "ElasticIP" }
+    }
+  }
+}

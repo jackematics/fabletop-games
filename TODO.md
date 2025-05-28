@@ -43,7 +43,6 @@
 - Clicking the submission button
   - Valid code entered will close the modal and admit you into a room
   - Invalid code will have a validation message, the modal will stay open
-- 
 
 ### Room sidebar
 
@@ -92,12 +91,12 @@
     - Not getting the answer in time leads to 0 points earned
   - Hint
     - Number of letters in the word / phrase
-    - Randomly fill in letters as the timer ticks down 
+    - Randomly fill in letters as the timer ticks down
   - Time limit shown on screen: 60 seconds that ticks down to 0
   - Repeat this for however many rounds configured
   - When all rounds end
     - Podium with top 3 players
-    - Button to play again 
+    - Button to play again
 
 ## Extra
 
