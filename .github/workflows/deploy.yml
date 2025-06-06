@@ -1,60 +1,60 @@
-name: Deploy app to EC2
-on:
-  push:
-    branches:
-      - master
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+# name: Deploy app to EC2
+# on:
+#   push:
+#     branches:
+#       - master
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     permissions:
+#       id-token: write
+#       contents: read
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.23
+#       - name: Set up Go
+#         uses: actions/setup-go@v4
+#         with:
+#           go-version: 1.23
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v3
-        with:
-          role-to-assume: arn:aws:iam::905418474445:role/GitHubActionsEC2DeployRole
-          aws-region: eu-west-2
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v3
+#         with:
+#           role-to-assume: arn:aws:iam::905418474445:role/GitHubActionsEC2DeployRole
+#           aws-region: eu-west-2
 
-      - name: Run tests
-        run: make test
+#       - name: Run tests
+#         run: make test
 
-      - name: Build Go executable
-        run: |
-          make build
+#       - name: Build Go executable
+#         run: |
+#           make build
 
-      - name: Deploy and update
-        run: |
-          # Upload new binary to S3
-          aws s3 cp ./fabletop-games s3://fabletop-games-bucket/fabletop-games-key
+#       - name: Deploy and update
+#         run: |
+#           # Upload new binary to S3
+#           aws s3 cp ./fabletop-games s3://fabletop-games-bucket/fabletop-games-key
 
-          # Update CloudFormation stack
-          aws cloudformation deploy \
-            --template-file infrastructure/ec2-template.json \
-            --stack-name FabletopGamesEC2Stack \
-            --capabilities CAPABILITY_NAMED_IAM
+#           # Update CloudFormation stack
+#           aws cloudformation deploy \
+#             --template-file infrastructure/ec2-template.json \
+#             --stack-name FabletopGamesEC2Stack \
+#             --capabilities CAPABILITY_NAMED_IAM
 
-          STACK_STATUS=$(aws cloudformation describe-stacks \
-            --stack-name FabletopGamesEC2Stack \
-            --query 'Stacks[0].StackStatus' --output text)
+#           STACK_STATUS=$(aws cloudformation describe-stacks \
+#             --stack-name FabletopGamesEC2Stack \
+#             --query 'Stacks[0].StackStatus' --output text)
 
-          if [[ -z "$STACK_STATUS" ]]; then
-            echo "Error: Failed to fetch stack status"
-            exit 1
-          fi
+#           if [[ -z "$STACK_STATUS" ]]; then
+#             echo "Error: Failed to fetch stack status"
+#             exit 1
+#           fi
 
-          if [[ "$STACK_STATUS" == "UPDATE_IN_PROGRESS" || "$STACK_STATUS" == "CREATE_IN_PROGRESS" ]]; then
-            echo "Waiting for stack update to complete..."
-            aws cloudformation wait stack-update-complete \
-              --stack-name FabletopGamesEC2Stack
-          else
-            echo "No stack update was necessary."
-          fi
+#           if [[ "$STACK_STATUS" == "UPDATE_IN_PROGRESS" || "$STACK_STATUS" == "CREATE_IN_PROGRESS" ]]; then
+#             echo "Waiting for stack update to complete..."
+#             aws cloudformation wait stack-update-complete \
+#               --stack-name FabletopGamesEC2Stack
+#           else
+#             echo "No stack update was necessary."
+#           fi

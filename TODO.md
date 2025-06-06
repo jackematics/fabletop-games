@@ -2,15 +2,15 @@
 
 ## Setup
 
-- Setup repo: Golang backend, JS frontend. Serve a barebones html site using embedded static files
-- Infrastructure: deploy to EC2
-- CI/CD: GitHub actions
+- :white_check_mark: ~~Setup repo: Golang backend, JS frontend. Serve a barebones html site using embedded static files~~
+- :white_check_mark: ~~Infrastructure: deploy to EC2~~
+- :white_check_mark: ~~CI/CD: GitHub actions~~
 
 ## Dashboard
 
 - Profile (top left)
-- Create a room button opens Create room modal
-- Join a room button opens Join room modal
+- Create a room button opens `Create Room` modal
+- Join a room button opens `Join Room` modal
 - List of all games as cards in a gallery, with the title and image
 - Hovering over the card flips it, showing the title but with a short description and the number of possible players
 - Clicking a card
@@ -22,9 +22,11 @@
 ### Profile
 
 - A way to input / change your name
-- Avatar generator???
+- Avatar placeholder
 - Use anon if none exists yet?
-- Transfer profile button?
+- Stretch
+  - Avatar generator
+  - Transfer profile button
 
 ### Create room
 
@@ -60,6 +62,8 @@
     - Defaults to 0
     - When a new game is started, reset score to 0
     - Score incremented based on game results
+    - Sort by top score when score changes
+    - Show arrows indicating people who have moved up/down
 
 ## Games
 
@@ -85,6 +89,8 @@
     - When the time limit is up, score points depending on how many people guessed the drawing and how quickly
     - Chat window is disabled for this player
   - The other players
+    - Gets notified on who is selected
+    - Is given continuous updates of what the selected player is drawing
     - Guess what the selected player is drawing within the time limit
     - Input answers into the chat window
     - Getting a correct answer awards points. The sooner the answer is found the more points earned
@@ -93,6 +99,7 @@
     - Number of letters in the word / phrase
     - Randomly fill in letters as the timer ticks down
   - Time limit shown on screen: 60 seconds that ticks down to 0
+  - Score screen at the end of each turn to show incremented points
   - Repeat this for however many rounds configured
   - When all rounds end
     - Podium with top 3 players
